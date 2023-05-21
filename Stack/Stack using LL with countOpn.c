@@ -1,22 +1,86 @@
 /*
 Author: Abhinav Sushil Pawar
-Date: 19/05/2023
-*/
-/*
-Stack is implemented using arrays
-Constraint: maximum stack size if MAXSTACK = 10000
+Date: 21/05/2023
+USN: 01FE21BEC087
 */
 #include<stdio.h>
-#define MAXSTACK 10000
-int stack[MAXSTACK];
-int sp=-1;              //Stack pointer
+#define MAXRAND 10000
+struct node     //SKELETON
+{
+    int data;
+    struct node *next;
+};
+typedef struct node *NODE;
+NODE head, newnode, temp, cur,next,prev;          //Global declaration
+NODE head=NULL;
+
+typedef struct topnode      //stack pointer in index form
+{
+    int sp;
+    int data;
+}TOPNODE;
+TOPNODE Topnode;
+
+NODE getnode()
+{
+    newnode=(NODE)malloc(sizeof(struct node));
+    if(newnode==NULL)
+    {
+        printf ("Memory not allocated for node! \n");
+        exit(0);
+    }
+    newnode->next=NULL;
+    return newnode;
+}
+
+NODE insertend(int num)
+{
+    newnode=getnode();
+    newnode->data=num;
+    if(head==NULL)  //empty LL
+    {
+        head=newnode;
+    }
+    else
+    {
+        temp=head;
+        while(temp->next!=NULL)
+            temp=temp->next;
+        temp->next=newnode;
+    }
+    return(head);
+}
+int deleteend()
+{
+    int item;
+    if(head==NULL)  //empty LL
+    {
+        printf("Stack already empty!\n");
+    }
+    else
+    {
+        prev=NULL;
+        temp=head;
+        while(temp->next!=NULL)
+        {
+            prev=temp;
+            temp=temp->next;
+        }
+        Topnode.data=prev->data;
+        prev->next=NULL;
+        item=temp->data;
+        free(temp);
+    }
+    return(item);
+}
+
 int StackisEmpty()
 {
-    return(sp==-1);
+    return(Topnode.sp==-1);
 }
 int StackisFull(int n)
 {
-    if(sp==n-1)
+    if(Topnode.sp==n-1)        //no more random numbers available in file
         return 1;
     else
         return 0;
@@ -35,13 +99,13 @@ void write_random_to_file(FILE* fptr,char inputfile[],int n)//(file_ptr,file_nam
         for(int i=0;i<n;i++)
         {
             int random=rand()%200;
-            fprintf(fptr,"%d\n",random);        //Store random numbers to file
+            fprintf(fptr,"%d\n",random);
         }
         printf("Entered %d random numbers in file successfully\n",n);
     }
     fclose(fptr);
 }
-void pushfromfile(FILE* fptr,char inputfile[],int n)
+void pushfromfile(FILE* fptr,char inputfile[],int n)// FILE* fpPush, FILE* fpStack)
 {
     if(fptr==NULL)
     {
@@ -59,9 +123,10 @@ void pushfromfile(FILE* fptr,char inputfile[],int n)
             printf("Stack overflow\n");
             return;
         }
-        sp++;
-        fscanf(fptr,"%d",&stack[sp]);    //Loading data pointed by file ptr to stack
-        printf("%d pushed, top=%d\n",stack[sp],sp);//stack[%d]=%d\n",sp,stack[sp]);
+        Topnode.sp++;
+        fscanf(fptr,"%d",&Topnode.data);
+        head=insertend(Topnode.data);
+        printf("%d pushed, top=%d\n",Topnode.data,Topnode.sp);
     }
 }
 int pop()
@@ -71,26 +136,12 @@ int pop()
         printf("Stack underflow\n");
         return;
     }
-    int item=stack[sp];     //1st extract the data, then decrement pointer
-    sp--;
-    printf("%d popped; top=%d\n",item,sp);
+    int item=deleteend();
+    Topnode.sp--;
+    printf("%d popped; top=%d\n",item,Topnode.sp);
     return item;
 }
-void append_num_to_file(FILE* fptr,char filename[],int data)       //(file_ptr,file_name,source_array,array_size)
-{
-    if(fptr==NULL)
-        printf("'%s' File creation/opening error!\n",filename);
-    else
-        fprintf(fptr,"%d\n",data);
-}
-void append_string_to_file(FILE* fptr,char filename[],char data[])
-{
-    if(fptr==NULL)
-        printf("'%s' File creation/opening error!\n",filename);
-    else
-        fprintf(fptr,"%s\n",data);
-}
-void flush(FILE* fptr, char filename[])     //clear a file
+void flush(FILE* fptr, char filename[])
 {
     fptr=fopen(filename,"w");
     fclose(fptr);
@@ -103,15 +154,19 @@ void display()
         printf("Stack underflow\n");
         return;
     }
-    printf("Displaying stack: ");
-    for(int i=sp;i>-1;i--)      //displaying using seek-alike operation
+    printf("Displaying stack: ");       //operation similar to seek
+
+    temp=head;
+    while(temp!=NULL)
     {
-        printf("%d ",stack[i]);
+        printf("%d ",temp->data);
+        temp=temp->next;
     }
 }
 
 void main()
 {
+    Topnode.sp=-1;
     FILE *fpinput;
     FILE *fpPush;
     FILE *fpPop;
@@ -119,23 +174,26 @@ void main()
     FILE *fpOpn;
     FILE *fpCountOpn;
     char inputfile[]="Inputfile.txt",stackfile[]="stackfile.txt",pushlog[]="Pushlog.txt",poplog[]="Poplog.txt",opfile[]="OperationsFile.txt",countfile[]="OperationsCount.txt";
-    int n,choice=-1,prevchoice=-1;
+    int n,choice,prevchoice=-1;
     int pushcount=0,popcount=0;
-    char caution;
-    fpinput=fopen(inputfile,"r");       //opening all necessary files
+    fpinput=fopen(inputfile,"r");
     fpPush=fopen(pushlog,"a");
+        if(fpPush==NULL)  printf("'%s' File creation/opening error!\n",pushlog);
     fpPop=fopen(poplog,"a");
+        if(fpPop==NULL)   printf("'%s' File creation/opening error!\n",poplog);
     fpOpn=fopen(opfile,"a");
+        if(fpOpn==NULL)  printf("'%s' File creation/opening error!\n",opfile);
     fpCountOpn=fopen(countfile,"a");
+        if(fpCountOpn==NULL)  printf("'%s' File creation/opening error!\n",countfile);
     while(1)
     {
-        if(choice==2 || choice==3)      //required for count operation file
-            prevchoice=choice;          //update previous choice as push or pop only
+        if(choice==2 || choice==3)
+            prevchoice=choice;
         printf("\n\nEnter choice:\n 0:Clear all files \n 1:Generate random numbers \n 2:Push \n 3:Pop \n 4:Display stack \n 5:Exit\n");
         scanf("%d",&choice);
         switch(choice)
         {
-            case 0: flush(fpinput,inputfile);       //clear all files
+            case 0: flush(fpinput,inputfile);
                     flush(fpStack,stackfile);
                     flush(fpPush,pushlog);
                     flush(fpPop,poplog);
@@ -147,13 +205,13 @@ void main()
                     scanf("%d",&n);
                     write_random_to_file(fpinput,inputfile,n);
                     break;
-            case 2: pushfromfile(fpinput,inputfile,n);              //push
-                    append_num_to_file(fpPush,pushlog,stack[sp]);
-                    append_string_to_file(fpOpn,opfile,"Push");
+            case 2: pushfromfile(fpinput,inputfile,n);
+                    fprintf(fpPush,"%d\n",Topnode.data);        //appending Topnode.data to pushfile
+                    fprintf(fpOpn,"%s\n","Push");        //appending
                     pushcount++;
                     break;
-            case 3: append_num_to_file(fpPop,poplog,stack[sp]);     //pop
-                    append_string_to_file(fpOpn,opfile,"Pop");
+            case 3: fprintf(fpPop,"%d\n",Topnode.data);        //appending Topnode.data to pushfile
+                    fprintf(fpOpn,"%s\n","Pop");        //appending
                     pop();
                     popcount++;
                     break;
@@ -161,20 +219,20 @@ void main()
                     break;
             case 5: printf("Exiting...\n");
                     break;
-            default:printf("Invalid choice... \n");
+            default: printf("Invalid choice... \n");
         }
         if(prevchoice!=choice)
         {
             if(prevchoice==2)       //push
             {
-                append_string_to_file(fpCountOpn,countfile,"Number of elements pushed: ");
-                append_num_to_file(fpCountOpn,countfile,pushcount);
+                fprintf(fpCountOpn,"%s","Number of elements pushed: ");        //appending
+                fprintf(fpCountOpn,"%d\n",pushcount);        //appending
                 pushcount=0;
             }
             else if(prevchoice==3)  //pop
             {
-                append_string_to_file(fpCountOpn,countfile,"Number of elements popped: ");
-                append_num_to_file(fpCountOpn,countfile,popcount);
+                fprintf(fpCountOpn,"%s","Number of elements popped: ");        //appending
+                fprintf(fpCountOpn,"%d\n",popcount);        //appending
                 popcount=0;
             }
         }
@@ -188,9 +246,11 @@ void main()
     fclose(fpCountOpn);
 
     fpStack=fopen(stackfile,"a");       //copying the stack to stack file
-    for(int i=sp;i>-1;i--)
+    temp=head;
+    for(int i=Topnode.sp;i>-1;i--)
     {
-        append_num_to_file(fpStack,stackfile,stack[i]);
+        fprintf(fpStack,"%d\n",temp->data);
+        temp=temp->next;
     }
     fclose(fpStack);
 }
